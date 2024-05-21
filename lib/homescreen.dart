@@ -17,7 +17,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final _formKey = GlobalKey<FormState>();
   final _controller = TextEditingController();
-  String? selectedValue;
+  String? selectedOriginValue;
+  String? selectedDestinationValue;
   final List<String> options = ['English', 'Nepali', 'Hindi'];
 
   @override
@@ -26,17 +27,30 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+  String _getLanguageCode(String language) {
+    if (language == 'English') {
+      return "en";
+    } else if (language == 'Nepali') {
+      return "ne";
+    } else if (language == 'Hindi') {
+      return "hi";
+    }
+    return "--";
+  }
+
   void translate(String src, String dest, String input) async {
+    if (src == "--" || dest == "--") {
+      setState(() {
+        output = "Failed to translate";
+      });
+      return;
+    }
+
     GoogleTranslator translator = new GoogleTranslator();
     var translation = await translator.translate(input, from: src, to: dest);
     setState(() {
       output = translation.text.toString();
     });
-    if (src == "--" || dest == "--") {
-      setState(() {
-        output = "Failed to translate";
-      });
-    }
   }
 
   @override
@@ -54,8 +68,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   DropdownButton<String>(
-                    value: selectedValue,
-                    hint: Text("Select Options"),
+                    value: selectedOriginValue,
+                    hint: Text("From"),
                     items: options.map((String value) {
                       return DropdownMenuItem<String>(
                         value: value,
@@ -64,7 +78,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     }).toList(),
                     onChanged: (String? newValue) {
                       setState(() {
-                        selectedValue = newValue!;
+                        originLanguage = newValue!;
+                        selectedOriginValue = newValue;
                       });
                     },
                     icon: Icon(Icons.keyboard_arrow_down_outlined),
@@ -81,8 +96,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     width: 40,
                   ),
                   DropdownButton<String>(
-                    value: selectedValue,
-                    hint: Text("Select Options"),
+                    value: selectedDestinationValue,
+                    hint: Text("To"),
                     items: options.map((String value) {
                       return DropdownMenuItem<String>(
                         value: value,
@@ -91,7 +106,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     }).toList(),
                     onChanged: (String? newValue) {
                       setState(() {
-                        selectedValue = newValue!;
+                        destinationLanguage = newValue!;
+                        selectedDestinationValue = newValue;
                       });
                     },
                     icon: Icon(Icons.keyboard_arrow_down_outlined),
@@ -140,7 +156,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       SizedBox(height: 20),
                       ElevatedButton(
                         onPressed: () {
-                          translate(codeLanguage(), dest, input)
+                          if (_formKey.currentState!.validate()) {
+                            translate(
+                                _getLanguageCode(originLanguage),
+                                _getLanguageCode(destinationLanguage),
+                                _controller.text.toString());
+                          }
                         },
                         child: Text('Translate'),
                       ),
@@ -148,6 +169,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
+              Text(
+                "\n$output",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              )
             ],
           ),
         ),
